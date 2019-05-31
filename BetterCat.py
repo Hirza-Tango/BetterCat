@@ -4,11 +4,15 @@ import argparse
 import termios
 import tty
 import sys
+import signal
 from fcntl import ioctl
 from struct import unpack
 from copy import deepcopy
 from os import system, environ
 from uuid import uuid4
+
+def resize_term(signum, frame):
+	pass
 
 def handle_args():
 	parser = argparse.ArgumentParser(description='Like a netcat shell, but magic')
@@ -27,7 +31,7 @@ def handle_args():
 
 	return parser.parse_args()
 
-def remote_command(command, server, timeout=0.1):
+def remote_command(command, server, timeout=0.2):
 	_ = server.send_line(str.encode(command))
 	output = server.recv(timeout=timeout)
 	result = bytes.decode(output, 'ascii')
@@ -86,16 +90,19 @@ def set_termios(local_termios, term, connection):
 	#ioctl TIOCGWINSZ returns a struct containing the rows and cols
 	rows, cols = unpack('hh', ioctl(sys.stdin, termios.TIOCGWINSZ, '1234'))
 	_ = remote_command(f'stty rows {rows} cols {cols}', connection)
-	# TODO: hook for shell resize
+	# TODO: hook for terminal resize
 	# TODO: what if stty isn't available
 	tty.setraw(sys.stdin)
 	return remote_term
 
 def sync(connection):
 	sync_tag = uuid4().hex
-	_ = remote_command(f' #  {sync_tag}',connection)
-	_ = connection.recv_until(bytes(f'{sync_tag}\r\n', 'ascii'))
+	_ = remote_command(f'\n#  {sync_tag}',connection)
+	_ = connection.recv_until(bytes(f'{sync_tag}', 'ascii'), 5)
+	_ = connection.recv()
+	# better syncing
 	print("Confirmed sync with tag:", sync_tag, end='\r\n')
+	return True
 
 def main():
 	args = handle_args()
@@ -123,15 +130,16 @@ def main():
 	local_termios = termios.tcgetattr(sys.stdin)
 	try:
 		remote_term = set_termios(deepcopy(local_termios), local_term, nc)
-		sync(nc)
-		# TODO: more recon
-		print(f"OS: {os} | Shell: {shell} | Term: {remote_term}", end='\r\n')
-		nc.interact()
+		if (sync(nc)):
+			# TODO: more recon
+			print(f"OS: {os} | Shell: {shell} | Term: {remote_term}", end='\r\n')
+			nc.interact()
 	except Exception as e:
 		print(e)
 	finally:
 		#reset terminal
 		termios.tcsetattr(sys.stdin, termios.TCSANOW, local_termios)
+		return
 		# TODO: print status code
 
 if __name__ == "__main__":
