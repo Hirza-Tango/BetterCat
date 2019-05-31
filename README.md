@@ -9,11 +9,11 @@ BetterCat will connect to the shell and do the following:
 - Enumerate the operating system, shell and supported terminal interfaces
 - Spawn a TTY shell for programs that need them, like `sudo`
 - Integrate the shell with your terminal!
-- + You want colour? You got colour! (Yes, it's spelled with a _u_)
-- + You want TAB completion? You got TAB completion!
-- + Tired of trying to kill a command with *Control-C* only for it to kill your shell? No more!
-- + Any other default control sequence for your terminal _should_ "Just work"
-- + Even `vim` and `emacs` work just fine!
+  + You want colour? You got colour! (Yes, it's spelled with a _u_)
+  + You want TAB completion? You got TAB completion!
+  + Tired of trying to kill a command with *Control-C* only for it to kill your shell? No more!
+  + Any other default control sequence for your terminal _should_ "Just work"
+  + Even `vim` and `emacs` work just fine!
 
 ## Installation
 
